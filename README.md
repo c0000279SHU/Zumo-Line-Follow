@@ -1,4 +1,5 @@
 # Robotics Assignment 1
+All code was written, compiled, and uploaded in Arduino IDE 1.8.16
 ## Mode 1
 ### Xbee-Uno-RC.ino
 The Code for the Aruino for any manual control. 
@@ -19,3 +20,8 @@ If the Zumo detects a person/cup directly in front of it, it will beep then turn
 ### Zumo-BorderDetect-HugLeft-Prox-Working.ino
 The code for the Zumo for mode 3
 Similarly to Mode 2, the Zumo will follow lines and detect people/cups however when it determines it hit a wall, it will turn aprozimately 90° right and require no intervention from the user/opperator. 
+
+## Usage Instructions
+Every file prefixed with Zumo or including Zumo in the name is to be uploaded to a Zumo 32U4 robot to fully function properly. The File Xbee-Uni-RC.ino is to be uploaded to an Arduino board that is wired to an Xbee using Software Serial ports and a joystick. 
+#### Uploading to Zumo
+I've found that the best way to upload to the Zumo is by utilizing Arduino IDE 1.8.16 as this will not cause the Zumo to derecognize itself when entering bootloader mode. 
