@@ -26,7 +26,7 @@ void setup() {
 void loop() {
   int incomingByte = 0; // for incoming serial data
   
-  // send data only when you receive data:
+ 
   if (Serial1.available() > 0) {
   // read the incoming byte:
   incomingByte = Serial1.read();
@@ -34,37 +34,40 @@ void loop() {
   char in = (char)incomingByte;   
   rec.concat(in);
 
+  //strips "rec" into values
   if(rec.indexOf('_')!=-1){
   xValue=rec.substring(0,rec.indexOf('-')).toInt();
   yValue=rec.substring(rec.indexOf('-')+1,rec.indexOf('=')).toInt();
   bValue=rec.substring(rec.indexOf('=')+1,rec.indexOf('_')).toInt();
   rec="";
-  //Serial.print(xValue);Serial.print(" "+yValue);Serial.println(rec);
-  //if(bValue=="1"){Serial.println("Button is Pressed");}
+
+  //maps joystick values into motor values
   motorY = map(yValue, 0, 1023, turnSpeed, -turnSpeed);
   motorX = map(xValue, 0, 1023, maxSpeed, -maxSpeed);
 
-  //motors.setSpeeds(xValue,xValue);
-  //*
-  
+  //determines deadzone of joystick
   xDeadzone=motorX<deadzone && motorX>deadzoneN;
   yDeadzone=motorY<deadzone && motorY>deadzoneN;
 
   //both in deadzone
   if(xDeadzone && yDeadzone){motors.setSpeeds(0,0);delay(10);}
+  
   //x out of deadzone
   else if(!xDeadzone && yDeadzone){
     if(motorX>deadzone){motors.setSpeeds(motorX, motorX); delay(10);}
     else if(motorX<deadzoneN){motors.setSpeeds(motorX, motorX); delay(10);}
   }
+  
   //y out of deadzone
   else if(!yDeadzone && xDeadzone){
     alt=motorY*-1;
     if(motorY>deadzone){motors.setSpeeds(motorY,-motorY); delay(10);}
     else if(motorY<deadzoneN){motors.setSpeeds(motorY,-motorY); delay(10);}
   }
+  
   //both out of deadzone
   else{
+    //Wonky Movement
     motors.setSpeeds(motorX, motorY);
   }
   //*/
@@ -82,5 +85,4 @@ void loop() {
   }
     
 }
-//else{Serial.println("Serial1 not available"); delay(500);}
 }

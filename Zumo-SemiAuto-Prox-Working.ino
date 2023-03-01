@@ -1,7 +1,3 @@
-/** This example uses the Zumo's line sensors to detect the white
-border around a sumo ring.  When the border is detected, it
-backs up and turns. */
-
 #include <Wire.h>
 #include <Zumo32U4.h>
 
@@ -21,8 +17,6 @@ int WALL_DURATION = 200;
 int WALL_SPEED = 300;
 int SLOW_TURN = 100;
 
-int leftTurnCount;
-int rightTurnCount;
 int forwardCount;
 int turnCount;
 int turnDirection;
@@ -30,8 +24,6 @@ int turnDirection;
 bool rightSen;
 bool leftSen;
 bool midSen;
-bool backedUp;
-bool wentForward;
 bool initManualMode;
 
 //----------------RC vars------------------
@@ -63,11 +55,8 @@ unsigned int lineSensorValues[NUM_SENSORS];
 void waitForButtonAndCountDown()
 {
   ledYellow(1);
-
   buttonA.waitForButton();
-
   ledYellow(0);
-
 }
 
 void setup()
@@ -76,10 +65,7 @@ void setup()
   proxSensors.initThreeSensors();
   waitForButtonAndCountDown();
 
-  leftTurnCount=0;
-  rightTurnCount=0;
   turnDirection=-1;
-  backedUp=false;
   initManualMode=false;
 
   Serial1.begin(9600);
@@ -92,15 +78,12 @@ void turnNintyR(){
   delay(REVERSE_DURATION);
   motors.setSpeeds(WALL_SPEED, -WALL_SPEED);
   delay(WALL_DURATION);
-  //motors.setSpeeds(FORWARD_SPEED, FORWARD_SPEED);
 }
 void turnNintyL(){
-  //buzzer.playNote(NOTE_G(4), 200, 15);
   motors.setSpeeds(-REVERSE_SPEED, -REVERSE_SPEED);
   delay(REVERSE_DURATION);
   motors.setSpeeds(-WALL_SPEED, WALL_SPEED);
   delay(WALL_DURATION);
-  //motors.setSpeeds(FORWARD_SPEED, FORWARD_SPEED);
 }
 void uturn(){
   buzzer.playNote(NOTE_G(5), 200, 15);
@@ -108,7 +91,6 @@ void uturn(){
   delay(REVERSE_DURATION);
   motors.setSpeeds(WALL_SPEED, -WALL_SPEED);
   delay(WALL_DURATION*2);
-  //motors.setSpeeds(FORWARD_SPEED, FORWARD_SPEED);
 }
 
 
@@ -123,6 +105,7 @@ void readLines(){
 //-----------------------LOOP-------------------------
 void loop()
 {
+  //start/pause
   if (buttonA.isPressed())
   {
     motors.setSpeeds(0, 0);
@@ -130,29 +113,34 @@ void loop()
     waitForButtonAndCountDown();
   }
 
+  //if not in manual mode -> auto mode
   if(!initManualMode){
 
+  //if a turn direction was sent (via RC) turn that direction 
   if(turnDirection==0||turnDirection==1){
     if(turnDirection==1){turnNintyR();turnDirection=-1;}
     else if(turnDirection==0){turnNintyL();turnDirection=-1;}
   }
   else{
-  //detect lines
-  readLines();
 
   //detect lines
   readLines();
-  
+
+  //if middle sensor enter manual control
   if(midSen){
     buzzer.playNote(NOTE_G(5), 200, 15);
     initManualMode=true;
     motors.setSpeeds(0,0);
     delay(500);
   }
+
+  //follow left line
   else if(leftSen&&!midSen){
     motors.setSpeeds(FORWARD_SPEED, FORWARD_SPEED-40);
     //delay(50);
   }
+
+  //turn left then move forward until line detected
   else if(rightSen&&!leftSen&&!midSen){
     motors.setSpeeds(-FORWARD_SPEED,FORWARD_SPEED);
     delay(200);
@@ -161,38 +149,39 @@ void loop()
       readLines();
     }while(!midSen&&!leftSen&&!rightSen);
   }
+
+  //if all 3 detected uturn 
+  //--should never occur--
   else if(leftSen&&rightSen&&midSen){
     uturn();
   }
+  
   //if nothing detected
   else if(!leftSen&&!midSen&&!rightSen){
-    /*
-    forwardCount=0;
-    if(forwardCount<50){
-      forwardCount+=1;
-      motors.setSpeeds(FORWARD_SPEED,FORWARD_SPEED);
-      delay(25);
-    }
-    //*/
+    
+    //turn until you find something
     while(!leftSen&&!midSen&&!rightSen&&turnCount<100){
       readLines();
       motors.setSpeeds(-SLOW_TURN, SLOW_TURN);
       turnCount+=1;
     }
+    
+    //if turning TOO much, move forward
     if(turnCount>=100){
       turnCount=0;
       motors.setSpeeds(FORWARD_SPEED,FORWARD_SPEED);
       //delay(50);
-      
     }
   }
 
+  //read proximity Sensors
   proxSensors.read();
   int pLeftSen = proxSensors.countsLeftWithLeftLeds();
   int pCenLeftSen = proxSensors.countsFrontWithLeftLeds();
   int pCenRightSen = proxSensors.countsFrontWithRightLeds();
   int pRightSen = proxSensors.countsRightWithRightLeds();
 
+  //if detect in front -> turn 90* and continue until you see a line
   if(pCenLeftSen==6&&pCenRightSen==6){
     turnNintyR();
     motors.setSpeeds(FORWARD_SPEED,FORWARD_SPEED);
@@ -200,14 +189,14 @@ void loop()
       readLines();
     }while(!midSen&&!leftSen&&!rightSen);
   }
+  //if detect to right or left -> beep
   else if(pLeftSen>=5||pRightSen>=5){
     buzzer.playNote(NOTE_G(5), 200, 15);
   }
   
   }}//end auto mode
   else{
-   
-  // send data only when you receive data:
+  //enter manual input
   if (Serial1.available() > 0) {
   // read the incoming byte:
   incomingByte = Serial1.read();
@@ -215,6 +204,7 @@ void loop()
   char in = (char)incomingByte;   
   rec.concat(in);
 
+  //strips "line" into values
   if(rec.indexOf('_')!=-1){
   xValue=rec.substring(0,rec.indexOf('-')).toInt();
   yValue=rec.substring(rec.indexOf('-')+1,rec.indexOf('=')).toInt();
@@ -224,7 +214,8 @@ void loop()
   //if(bValue=="1"){Serial.println("Button is Pressed");}
   motorY = map(yValue, 0, 1023, turnSpeed, -turnSpeed);
   motorX = map(xValue, 0, 1023, maxSpeed, -maxSpeed);
-  
+
+  //determines deadzone
   xDeadzone=motorX<deadzone && motorX>deadzoneN;
   yDeadzone=motorY<deadzone && motorY>deadzoneN;
 
