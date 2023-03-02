@@ -25,3 +25,6 @@ Similarly to Mode 2, the Zumo will follow lines and detect people/cups however w
 Every file prefixed with Zumo or including Zumo in the name is to be uploaded to a Zumo 32U4 robot to fully function properly. The File Xbee-Uni-RC.ino is to be uploaded to an Arduino board that is wired to an Xbee using Software Serial ports and a joystick. 
 #### Uploading to Zumo
 I've found that the best way to upload to the Zumo is by utilizing Arduino IDE 1.8.16 as this will not cause the Zumo to derecognize itself when entering bootloader mode. 
+
+### Once Uploaded
+After you've uploaded a sketch to the Zumo, place it within the lines of the maze, ideally with a little overlap of the left sensor, and press the A button on the Zumo while making sure to not lift the front while pressing it. To prevent this you should press down on the front while you press the A button. Once the A button has been released it will begin to navigate the maze/building by following the lines. **For manual mode:** you do not need to do anything except press inputs on the joystick on the arduino.
